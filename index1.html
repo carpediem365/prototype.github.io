@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전남대학교병원 임상교육훈련센터 | 사용자 프로토타입</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: "Calm Harmony" - A professional and serene palette using shades of blue, gray, and subtle teal accents. -->
+    <!-- Application Structure Plan: The application is now structured as a simulated multi-page site. JavaScript controls the visibility of full-page content sections to mimic navigation between distinct pages (Home, About, Courses, etc.), providing a more traditional and intuitive user experience as requested. This update focuses on fully building out the 'About Us' page with all its sub-sections as defined in the PDF. -->
+    <!-- Visualization & Content Choices: 
+         - Report Info: '센터소개' (About Us) and its sub-pages. Goal: Inform in detail.
+         - '인사말' (Greeting): Viz/Method: A two-column layout with a placeholder for a photo and text. Justification: A standard, professional format for greetings.
+         - '목표 및 비전' (Vision): Viz/Method: Icon-based feature cards. Justification: Visually breaks down the center's core values for easy digestion.
+         - '연혁' (History): Viz/Method: A vertical timeline created with HTML/Tailwind. Interaction: None, static display. Justification: More engaging and readable than a simple list for chronological data.
+         - '조직도' (Org Chart): Viz/Method: A hierarchical chart built with nested divs and flexbox. Justification: Clearly visualizes the reporting structure without external libraries.
+         - '오시는 길' (Directions): Viz/Method: A section with an embedded map placeholder, address, and public transport details. Justification: Provides comprehensive, actionable information for visitors.
+         - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .page-content { display: none; }
+        .page-content.active { display: block; }
+        .tab-button.active, .rental-tab-button.active, .mypage-tab-button.active { 
+            border-color: #0ea5e9; 
+            background-color: #e0f2fe; 
+            color: #0c4a6e; 
+            font-weight: 600; 
+        }
+        .community-sidebar-link.active {
+            background-color: #0284c7; /* sky-600 */
+            color: white;
+            font-weight: 700;
+        }
+        .nav-link.active { color: #0ea5e9; font-weight: 600; }
+        .modal-overlay { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+        .timeline-item { border-left: 2px solid #38bdf8; }
+        .hero-section {
+            background-image: url('https://storage.googleapis.com/gemini-prod-us-west1-423901-assets/images/621b1834_chonnam_national_university_hospital_building_on_a_clear,_sunny_day._the_perspective_should_be_from_the_ground,_looking_up_at_the_main_entrance._include_some_green_trees_and_a_clear_blue_sky._the_overall_tone_should_be_clean,_bright,_and_welcoming..jpeg');
+            background-size: cover;
+            background-position: center;
+        }
+        .course-view-toggle.active, .calendar-view-toggle.active { background-color: #0ea5e9; color: white; }
+        .calendar-day.has-event { background-color: #e0f2fe; cursor: pointer; }
+        .notification-toast {
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        .floor-plan-room { transition: all 0.3s ease; border: 2px solid transparent; }
+        .floor-plan-room:hover { border-color: #0ea5e9; }
+        .floor-plan-room.selected { background-color: #0ea5e9; color: white; border-color: #0ea5e9; transform: scale(1.05); }
+        .time-slot { transition: background-color 0.2s; }
+        .time-slot.available:hover { background-color: #93c5fd; }
+        .time-slot.selected { background-color: #2563eb; color: white; }
+        /* 기본: 빈 별(☆)을 항상 5개 그리기 */
+        .star-rating > span:before {
+        content: "\2606";              /* ☆ */
+        color: #cbd5e1;                /* slate-300 정도 */
+        }
+
+        /* 너가 준 규칙: hover 시 채움 */
+        .star-rating > span:hover:before,
+        .star-rating > span:hover ~ span:before {
+        content: "\2605";
+        color: #facc15; /* yellow-400 */
+        }
+
+        /* 너가 준 규칙: 선택(고정) 시 채움 */
+        .star-rating > span.selected:before,
+        .star-rating > span.selected ~ span:before {
+        content: "\2605";
+        color: #facc15;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-40">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <a href="#home" data-page="home" class="nav-link flex-shrink-0">
+                        <h1 class="text-xl font-bold text-blue-800">전남대병원 임상교육훈련센터</h1>
+                    </a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#about" data-page="about" class="nav-link text-gray-600 hover:text-sky-600 px-3 py-2 rounded-md text-sm font-medium">센터소개</a>
+                        <a href="#courses" data-page="courses" class="nav-link text-gray-600 hover:text-sky-600 px-3 py-2 rounded-md text-sm font-medium">교육과정</a>
+                        <a href="#rental" data-page="rental" class="nav-link text-gray-600 hover:text-sky-600 px-3 py-2 rounded-md text-sm font-medium">시설/장비 대여</a>
+                        <a href="#community" data-page="community" class="nav-link text-gray-600 hover:text-sky-600 px-3 py-2 rounded-md text-sm font-medium">커뮤니티</a>
+                        <a href="#mypage" data-page="mypage" class="nav-link text-gray-600 hover:text-sky-600 px-3 py-2 rounded-md text-sm font-medium">마이페이지</a>
+                    </div>
+                </div>
+                <div id="auth-container" class="flex items-center">
+                     <button id="login-button" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">로그인</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Home Page -->
+        <section id="page-home" class="page-content active">
+            <div class="hero-section relative h-[60vh] min-h-[400px] flex items-center justify-center">
+                <div class="absolute inset-0 bg-black/50"></div>
+                <div class="relative text-center text-white px-4">
+                    <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight">전문 의료인 양성의 허브</h2>
+                    <p class="mt-4 text-lg md:text-xl max-w-3xl mx-auto">최첨단 시설과 체계적인 교육 프로그램을 통해 최고의 의료 전문가를 양성합니다.</p>
+                    <button data-page="courses" class="nav-link mt-8 inline-block bg-sky-500 text-white px-8 py-3 rounded-md text-lg font-semibold hover:bg-sky-600 transition-colors shadow-lg">교육과정 둘러보기</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Page -->
+        <section id="page-about" class="page-content">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="text-center pt-8 pb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">센터소개</h2>
+                    <p class="mt-3 text-lg text-gray-600">임상교육훈련센터의 비전과 걸어온 길을 소개합니다.</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-xl p-4 sm:p-6 lg:p-8">
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-4 sm:space-x-8" aria-label="Tabs">
+                            <button data-tab="about-greeting" class="about-tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">인사말</button>
+                            <button data-tab="about-vision" class="about-tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">목표 및 비전</button>
+                            <button data-tab="about-history" class="about-tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">연혁</button>
+                            <button data-tab="about-org" class="about-tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">조직도</button>
+                            <button data-tab="about-location" class="about-tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">오시는 길</button>
+                        </nav>
+                    </div>
+                    <div id="about-content" class="mt-8 min-h-[400px]"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Courses Page -->
+        <section id="page-courses" class="page-content">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="text-center pt-8 pb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">교육과정 및 수강신청</h2>
+                    <p class="mt-3 text-lg text-gray-600">다양한 교육 과정을 확인하고 간편하게 수강 신청하세요.</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-xl p-4 sm:p-6 lg:p-8">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                        <div class="flex flex-wrap gap-2">
+                            <input id="course-search-input" type="text" placeholder="과정명 검색..." class="p-2 border rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                            <select id="course-category-filter" class="p-2 border rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                                <option value="all">전체 분야</option><option value="심폐소생술">심폐소생술</option><option value="외상">외상</option><option value="시뮬레이션">시뮬레이션</option>
+                            </select>
+                            <!-- NEW Filters -->
+                            <select id="course-type-filter" class="p-2 border rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                                <option value="all">전체 유형</option><option value="오프라인">오프라인</option><option value="온라인">온라인</option>
+                            </select>
+                            <select id="course-session-filter" class="p-2 border rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                                <option value="all">전체 차수</option><option value="1차">1차</option><option value="2차">2차</option><option value="상시">상시</option>
+                            </select>
+                             <select id="course-status-filter" class="p-2 border rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                                <option value="all">전체 상태</option><option value="open">신청가능</option><option value="closed">마감</option><option value="pending">예정</option>
+                            </select>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <button id="course-view-list-btn" class="course-view-toggle active p-2 border rounded-l-md">목록형</button>
+                            <button id="course-view-calendar-btn" class="course-view-toggle p-2 border rounded-r-md">캘린더형</button>
+                        </div>
+                    </div>
+                    <div id="course-list-view" class="course-view-content"><div id="course-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div></div>
+                    <div id="course-calendar-view" class="course-view-content hidden"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rental Page -->
+        <section id="page-rental" class="page-content">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="text-center pt-8 pb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">시설/장비 대여</h2>
+                    <p class="mt-3 text-lg text-gray-600">최첨단 시설과 장비를 간편하게 예약하세요.</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-xl p-4 sm:p-6 lg:p-8">
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-4 sm:space-x-8" aria-label="Tabs">
+                            <button data-tab="rental-facility" class="rental-tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">시설 대여</button>
+                            <button data-tab="rental-equipment" class="rental-tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">장비 대여</button>
+                        </nav>
+                    </div>
+                    <div id="rental-content" class="mt-8">
+                        <div id="rental-facility-content" class="rental-tab-content">
+                            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                                <div class="lg:col-span-3">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h4 class="font-bold text-xl">층별 안내도</h4>
+                                        <select id="floor-selector" class="p-2 border rounded-md shadow-sm"><option value="1">1층</option><option value="2">2층</option></select>
+                                    </div>
+                                    <div id="floor-plan-container" class="bg-slate-100 p-4 rounded-lg h-96"></div>
+                                </div>
+                                <div class="lg:col-span-2">
+                                    <div id="booking-details-container" class="p-4 border rounded-lg bg-slate-50 min-h-[26rem]">
+                                        <p class="text-gray-500">안내도에서 예약할 시설을 선택하세요.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="rental-equipment-content" class="rental-tab-content hidden">
+                            <div id="equipment-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Community Page -->
+        <section id="page-community" class="page-content">
+             <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="flex flex-col md:flex-row gap-8">
+                    <!-- Left Sidebar -->
+                    <aside class="w-full md:w-1/4 lg:w-1/5">
+                        <div class="bg-sky-800 text-white p-6 rounded-t-lg">
+                            <h2 class="text-2xl font-bold">커뮤니티</h2>
+                        </div>
+                        <div class="bg-white rounded-b-lg shadow-lg">
+                            <nav id="community-sidebar-nav" class="p-4 space-y-2">
+                                <a href="#" data-board="news" class="community-sidebar-link block px-4 py-3 rounded-md text-gray-700 hover:bg-sky-100">센터소식</a>
+                                <a href="#" data-board="announcements" class="community-sidebar-link block px-4 py-3 rounded-md text-gray-700 hover:bg-sky-100">공지사항</a>
+                                <a href="#" data-board="ext-edu" class="community-sidebar-link block px-4 py-3 rounded-md text-gray-700 hover:bg-sky-100">외부 교육모집</a>
+                                <a href="#" data-board="vod" class="community-sidebar-link block px-4 py-3 rounded-md text-gray-700 hover:bg-sky-100">VOD</a>
+                                <a href="#" data-board="freeboard" class="community-sidebar-link block px-4 py-3 rounded-md text-gray-700 hover:bg-sky-100">자유게시판</a>
+                                <a href="#" data-board="faq" class="community-sidebar-link block px-4 py-3 rounded-md text-gray-700 hover:bg-sky-100">FAQ</a>
+                                <a href="#" data-board="qna" class="community-sidebar-link block px-4 py-3 rounded-md text-gray-700 hover:bg-sky-100">1:1 문의</a>
+                            </nav>
+                        </div>
+                    </aside>
+
+                    <!-- Right Content -->
+                    <div id="community-main-content" class="w-full md:w-3/4 lg:w-4/5 bg-white p-6 sm:p-8 rounded-lg shadow-lg min-h-[600px]">
+                        <!-- Content will be loaded here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- My Page -->
+        <section id="page-mypage" class="page-content">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="text-center pt-8 pb-12">
+                    <h2 class="text-3xl font-bold text-gray-900">마이페이지</h2>
+                    <p class="mt-3 text-lg text-gray-600">나의 교육 및 대여 현황을 관리합니다.</p>
+                </div>
+                <div id="mypage-login-prompt" class="text-center py-20 text-gray-500">
+                    <p>로그인이 필요한 서비스입니다.</p>
+                    <button class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700" onclick="document.getElementById('login-button').click()">로그인하기</button>
+                </div>
+                <div id="mypage-main-content" class="hidden">
+                    <div class="bg-white rounded-lg shadow-xl p-4 sm:p-6 lg:p-8">
+                        <div class="border-b border-gray-200">
+                            <nav class="-mb-px flex flex-wrap -mx-4" aria-label="Tabs">
+                                <button data-tab="mypage-learning" class="mypage-tab-button active whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm">학습 관리</button>
+                                <button data-tab="mypage-schedule" class="mypage-tab-button whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">수강 스케줄</button>
+                                <button data-tab="mypage-payment" class="mypage-tab-button whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">결제 내역</button>
+                                <button data-tab="mypage-rental" class="mypage-tab-button whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">대여 신청 내역</button>
+                                <button data-tab="mypage-certs" class="mypage-tab-button whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">증명서 발급</button>
+                            </nav>
+                        </div>
+                        <div id="mypage-content" class="mt-8 min-h-[400px]"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Modal -->
+    <div id="modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50 opacity-0">
+        <div id="modal-content" class="modal-content bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto transform scale-95"></div>
+    </div>
+    
+    <!-- Notification Toast -->
+    <div id="notification-toast" class="notification-toast fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg opacity-0 transform translate-y-10"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- State ---
+            let isLoggedIn = false;
+            let currentUser = null;
+
+            // --- Data ---
+            // REVISED: coursesData with more details for MyPage
+            let coursesData = [
+                { id: 1, title: '기본 심폐소생술(BLS)', category: '심폐소생술', type: '오프라인', session: '1차', date: '2025-07-10', time: '09:00~13:00', location: '시뮬레이션실 A', instructor: '김강사', capacity: 20, applicants: 20, waitlist: 0, userStatus: 'applied', completed: true, grade: 'Pass', debriefVideoUrl: '#', surveyCompleted: false, paymentStatus: '결제완료', price: 50000, description: '미국심장협회(AHA)의 최신 가이드라인에 따른 표준 기본 심폐소생술 교육과정입니다. 성인 및 소아 심정지 환자에 대한 가슴 압박, 인공호흡, 자동제세동기(AED) 사용법을 실습 위주로 학습합니다.' },
+                { id: 2, title: '전문 외상 처치 과정(ATLS)', category: '외상', type: '오프라인', session: '상시', date: '2025-08-11', time: '09:00~17:00', location: '외상센터 교육실', instructor: '이강사', capacity: 15, applicants: 14, waitlist: 0, userStatus: null, completed: false, price: 250000, description: '외상소생술의 국제 표준 교육과정으로, 외상환자의 초기 평가와 처치에 대한 지식과 술기를 체계적으로 교육합니다. 의사 및 응급의료 전문가를 대상으로 합니다.' },
+                { id: 3, title: '복강경 시뮬레이션', category: '시뮬레이션', type: '오프라인', session: '1차', date: '2025-08-10', time: '10:00~16:00', location: '시뮬레이션실 B', instructor: '박강사', capacity: 10, applicants: 8, waitlist: 0, userStatus: 'waitlisted', completed: false, price: 120000, description: '최신 복강경 시뮬레이터를 이용하여 기본적인 기구 조작부터 봉합, 절제술까지 다양한 외과적 술기를 안전하게 연습하고 피드백을 받을 수 있는 과정입니다.' },
+                { id: 4, title: '신규 간호사 술기 워크샵', category: '시뮬레이션', type: '오프라인', session: '1차', date: '2025-08-08', time: '09:00~18:00', location: '대강당', instructor: '최강사', capacity: 30, applicants: 5, waitlist: 0, userStatus: 'applied', completed: false, paymentStatus: '결제대기', price: 80000, description: '신규 간호사를 대상으로 필수 임상 술기(정맥주사, 유치도뇨, 기관 내 흡인 등)에 대한 이론 교육과 집중적인 실습을 제공하여 임상 적응 능력을 향상시킵니다.' },
+                { id: 5, title: '중환자 관리 과정', category: '심폐소생술', type: '온라인', session: '상시', date: '2025-09-25', time: '상시', location: '온라인', instructor: '김강사', capacity: 100, applicants: 80, waitlist: 0, userStatus: null, completed: false, price: 0, description: 'VOD를 통해 중환자실에서 발생하는 다양한 응급 상황에 대한 대처법과 최신 중환자 관리 지견을 학습하는 온라인 교육과정입니다.' },
+                { id: 6, title: '기본 심폐소생술(BLS)', category: '심폐소생술', type: '오프라인', session: '2차', date: '2025-08-09', time: '14:00~18:00', location: '시뮬레이션실 A', instructor: '김강사', capacity: 20, applicants: 5, waitlist: 0, userStatus: null, completed: false, price: 50000, description: '미국심장협회(AHA)의 최신 가이드라인에 따른 표준 기본 심폐소생술 교육과정입니다. 성인 및 소아 심정지 환자에 대한 가슴 압박, 인공호흡, 자동제세동기(AED) 사용법을 실습 위주로 학습합니다.' },
+                { id: 7, title: '초음파 워크샵', category: '시뮬레이션', type: '오프라인', session: '1차', date: '2025-08-10', time: '13:00~17:00', location: '술기 실습실', instructor: '이강사', capacity: 15, applicants: 5, waitlist: 0, userStatus: null, completed: false, price: 100000, description: '복부 및 심장 초음파의 기본 원리와 임상 적용법을 배우는 실습 중심의 워크샵입니다.' },
+            ];
+            let facilityData = {
+                '1': [
+                    { id: 'sim-a', name: '시뮬레이션실 A', gridClass: 'col-span-2 row-span-2', bookings: {'2025-08-12': ['10:00', '11:00'], '2025-08-13': ['09:00', '14:00', '15:00'], '2025-08-20': ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'], '2025-09-05': ['13:00', '14:00']} },
+                    { id: 'sim-b', name: '시뮬레이션실 B', gridClass: '', bookings: {'2025-08-12': ['14:00'], '2025-08-22': ['10:00', '11:00']} },
+                    { id: 'debrief', name: '디브리핑룸', gridClass: '', bookings: {'2025-09-10': ['10:00']} },
+                ],
+                '2': [
+                    { id: 'skill-lab', name: '술기 실습실', gridClass: 'col-span-3', bookings: {} },
+                    { id: 'seminar-1', name: '세미나실 1', gridClass: 'col-span-1', bookings: {} },
+                    { id: 'seminar-2', name: '세미나실 2', gridClass: 'col-span-2', bookings: {} },
+                ]
+            };
+            let equipmentData = [
+                { id: 'us-1', name: '이동형 초음파기', spec: 'Model XYZ-123', bookings: {'2025-08-15': ['09:00', '10:00'], '2025-08-16': ['14:00']} },
+                { id: 'vent-1', name: '인공호흡기', spec: 'Model ABC-456', bookings: {} },
+                { id: 'defib-1', name: '자동제세동기(AED)', spec: 'Model DEF-789', bookings: {'2025-08-20': ['13:00', '14:00', '15:00'], '2025-09-01': ['09:00']} },
+            ];
+            const communityData = {
+                'news': [
+                    { id: 1, title: '지역 언론사, 우리 센터의 최신 VR 시뮬레이터 집중 조명', author: '광주매일', date: '2025-08-10', views: 152, content: '광주매일 신문사는 전남대학교병원 임상교육훈련센터가 최근 도입한 가상현실(VR) 기반 외과 수술 시뮬레이터에 대해 집중 보도했습니다. 이 기사는 새로운 기술이 지역 의료 교육에 미치는 긍정적인 영향과 미래 전망에 대해 다루고 있습니다.'},
+                    { id: 2, title: '전남대병원, 임상교육훈련센터 통해 지역 의료 질 향상에 기여', author: '메디컬타임즈', date: '2025-08-05', views: 231, content: '메디컬타임즈는 본 센터의 다양한 교육 프로그램이 지역 내 신규 및 기존 의료 인력의 역량 강화에 어떻게 기여하고 있는지에 대한 심층 분석 기사를 게재했습니다.'},
+                ],
+                'announcements': [
+                    { id: 1, title: '임상교육훈련센터 홈페이지 정식 오픈 안내', author: '관리자', date: '2025-08-01', views: 450, content: '안녕하십니까, 전남대학교병원 임상교육훈련센터입니다. 드디어 저희 센터의 공식 홈페이지가 문을 열었습니다. 앞으로 홈페이지를 통해 다양한 교육 정보와 센터 소식을 신속하게 전달해 드릴 예정이오니, 많은 관심과 이용 부탁드립니다. 감사합니다.'},
+                    { id: 2, title: '9월 심폐소생술 교육과정 추가 개설 안내', author: '관리자', date: '2025-08-11', views: 320, content: '많은 분들의 요청에 힘입어 9월 기본 심폐소생술(BLS) 과정이 추가로 개설되었습니다. 교육과정 메뉴에서 상세 일정을 확인하시고 수강 신청을 서둘러 주시기 바랍니다.'},
+                ],
+                'ext-edu': [
+                     { id: 1, title: '[대한심폐소생협회] 2025년 하반기 BLS Provider 과정 모집', author: '대한심폐소생협회', date: '2025-08-09', views: 188, content: '대한심폐소생협회에서 주관하는 2025년 하반기 BLS Provider 과정 참가자를 모집합니다. 상세 내용은 협회 홈페이지를 참고해 주시기 바랍니다.'},
+                ],
+                'vod': [
+                    { id: 1, title: '기본 심폐소생술(BLS) 이론 강의', instructor: '김강사', thumbnail: 'https://placehold.co/600x400/e2e8f0/475569?text=VOD+%EC%8D%B8%EB%84%A4%EC%9D%BC' },
+                    { id: 2, title: '외상환자 초기 대응 전략', instructor: '이강사', thumbnail: 'https://placehold.co/600x400/e2e8f0/475569?text=VOD+%EC%8D%B8%EB%84%A4%EC%9D%BC' },
+                    { id: 3, title: '복강경 수술 시뮬레이션 팁', instructor: '박강사', thumbnail: 'https://placehold.co/600x400/e2e8f0/475569?text=VOD+%EC%8D%B8%EB%84%A4%EC%9D%BC' },
+                ],
+                'freeboard': [
+                    { id: 1, title: 'BLS 과정 후기입니다.', author: '김의사', date: '2025-08-12', views: 25, content: '오늘 BLS 과정 정말 유익했습니다. 강사님도 친절하시고, 실습 장비도 좋아서 많은 도움이 되었습니다. 다음에도 좋은 과정 기대하겠습니다!' },
+                    { id: 2, title: '시설 대여할 때 팁 공유합니다.', author: '박간호사', date: '2025-08-11', views: 42, content: '시뮬레이션실 A 대여해서 스터디했는데, 공간도 넓고 쾌적해서 좋았습니다. 예약하실 분들은 참고하세요.' },
+                ],
+                'faq': [
+                    { q: '수강 신청은 어떻게 하나요?', a: '로그인 후 교육과정 메뉴에서 원하시는 강좌를 선택하여 신청할 수 있습니다. 정원이 초과된 경우 대기자 등록이 가능합니다.' },
+                    { q: '시설 대여 현황은 어디서 확인하나요?', a: '시설/장비 대여 메뉴에서 각 시설별 예약 현황을 확인하실 수 있습니다. 맵 또는 목록에서 시설을 선택하면 시간대별 예약 가능 여부가 표시됩니다.' },
+                    { q: '수료증은 어떻게 발급받나요?', a: '마이페이지의 증명서 발급 메뉴에서 이수한 교육과정의 수료증을 PDF 파일로 즉시 다운로드할 수 있습니다.' },
+                ],
+                'qna': []
+            };
+            const myRentalData = [
+                { id: 1, type: 'facility', name: '시뮬레이션실 A', date: '2025-08-12', time: '10:00~12:00', status: '승인완료' },
+                { id: 2, type: 'equipment', name: '이동형 초음파기', date: '2025-08-15', time: '09:00~10:00', status: '승인대기' },
+            ];
+
+            // --- Global Elements & Functions ---
+            const pageContents = document.querySelectorAll('.page-content');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modal-content');
+            const notificationToast = document.getElementById('notification-toast');
+
+            function navigateTo(pageId) {
+                if (pageId === 'mypage' && !isLoggedIn) {
+                    document.getElementById('mypage-login-prompt').style.display = 'block';
+                    document.getElementById('mypage-main-content').style.display = 'none';
+                } else if (pageId === 'mypage' && isLoggedIn) {
+                    document.getElementById('mypage-login-prompt').style.display = 'none';
+                    document.getElementById('mypage-main-content').style.display = 'block';
+                    initializeMyPage();
+                }
+                
+                if (pageId === 'community') {
+                    initializeCommunityPage();
+                } else if (pageId === 'rental') {
+                    initializeRentalPage();
+                } else if (pageId === 'courses') {
+                    initializeCoursesPage();
+                }
+
+                pageContents.forEach(page => page.classList.toggle('active', page.id === `page-${pageId}`));
+                navLinks.forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
+                window.scrollTo(0, 0);
+            }
+            navLinks.forEach(link => link.addEventListener('click', (e) => {
+                e.preventDefault();
+                navigateTo(link.dataset.page);
+            }));
+
+            function openModal() {
+                modal.classList.remove('hidden');
+                setTimeout(() => { modal.classList.remove('opacity-0'); modalContent.classList.remove('scale-95'); }, 10);
+            }
+            window.closeModal = () => {
+                modal.classList.add('opacity-0');
+                modalContent.classList.add('scale-95');
+                setTimeout(() => { modal.classList.add('hidden'); modalContent.innerHTML = ''; }, 300);
+            }
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+            
+            window.showNotification = (message) => {
+                notificationToast.textContent = message;
+                notificationToast.classList.remove('opacity-0', 'translate-y-10');
+                setTimeout(() => notificationToast.classList.add('opacity-0', 'translate-y-10'), 3000);
+            }
+
+            // --- Auth Functions ---
+            const authContainer = document.getElementById('auth-container');
+            function updateAuthUI() {
+                if (isLoggedIn) {
+                    authContainer.innerHTML = `
+                        <span class="text-sm font-medium mr-4">${currentUser.name}님</span>
+                        <button id="logout-button" class="bg-gray-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-600">로그아웃</button>
+                    `;
+                    document.getElementById('logout-button').addEventListener('click', handleLogout);
+                } else {
+                    authContainer.innerHTML = `<button id="login-button" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">로그인</button>`;
+                    document.getElementById('login-button').addEventListener('click', openLoginModal);
+                }
+                const currentPage = document.querySelector('.page-content.active')?.id.replace('page-', '');
+                if (currentPage === 'mypage' || currentPage === 'community' || currentPage === 'rental' || currentPage === 'courses') {
+                    navigateTo(currentPage);
+                }
+            }
+            
+            window.openLoginModal = () => {
+                 modalContent.innerHTML = `
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold mb-6 text-center">로그인</h3>
+                        <form id="login-form" class="space-y-4">
+                            <div>
+                                <label for="username" class="block text-sm font-medium text-gray-700">아이디</label>
+                                <input type="text" id="username" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500" value="testuser">
+                            </div>
+                            <div>
+                                <label for="password" class="block text-sm font-medium text-gray-700">비밀번호</label>
+                                <input type="password" id="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-sky-500 focus:border-sky-500" value="1234">
+                            </div>
+                            <div class="pt-4">
+                                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">로그인</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                openModal();
+                document.getElementById('login-form').addEventListener('submit', handleLogin);
+            }
+
+            function handleLogin(e) {
+                e.preventDefault();
+                isLoggedIn = true;
+                currentUser = { name: '홍길동', id: 'testuser' };
+                showNotification(`${currentUser.name}님, 환영합니다.`);
+                updateAuthUI();
+                closeModal();
+            }
+
+            function handleLogout() {
+                isLoggedIn = false;
+                currentUser = null;
+                showNotification('로그아웃 되었습니다.');
+                updateAuthUI();
+                navigateTo('home');
+            }
+
+
+            // --- Page Initializers ---
+            function initializeAboutPage() {
+                const aboutContentContainer = document.getElementById('about-content');
+                const aboutTabs = document.querySelectorAll('.about-tab-button');
+                const aboutTabContents = {
+                    'about-greeting': `
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="md:col-span-1 flex justify-center items-center"><div class="w-48 h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">[센터장 사진]</div></div>
+                            <div class="md:col-span-2"><h3 class="font-bold text-2xl mb-4 text-gray-800">최고의 의료 전문가를 향한 여정에 함께합니다.</h3><p class="text-gray-600 leading-relaxed">전남대학교병원 임상교육훈련센터 홈페이지를 찾아주신 모든 분들을 진심으로 환영합니다. 우리 센터는 급변하는 의료 환경에 대응하고, 환자 중심의 안전하고 질 높은 의료 서비스를 제공할 수 있는 전문 인력 양성을 목표로 설립되었습니다. (이하 생략)</p><p class="text-right mt-6 font-semibold text-gray-700">전남대학교병원 임상교육훈련센터장</p></div>
+                        </div>`,
+                    'about-vision': `
+                         <h3 class="font-bold text-2xl mb-6 text-center text-gray-800">우리의 목표와 비전</h3>
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                             <div class="p-6 bg-sky-50 rounded-lg"><h4 class="font-semibold text-lg text-sky-800">체계적인 교육</h4><p class="mt-2 text-sm text-gray-600">다양한 직종별 요구도를 반영한 맞춤형 교육 프로그램을 제공합니다.</p></div>
+                             <div class="p-6 bg-sky-50 rounded-lg"><h4 class="font-semibold text-lg text-sky-800">최첨단 인프라</h4><p class="mt-2 text-sm text-gray-600">현장과 유사한 환경의 시뮬레이션 실습으로 임상 역량을 강화합니다.</p></div>
+                             <div class="p-6 bg-sky-50 rounded-lg"><h4 class="font-semibold text-lg text-sky-800">지속가능한 플랫폼</h4><p class="mt-2 text-sm text-gray-600">우수한 의료인력을 지속적으로 양성하는 교육의 허브가 되겠습니다.</p></div>
+                         </div>`,
+                    'about-history': `
+                        <h3 class="font-bold text-2xl mb-8 text-center text-gray-800">걸어온 길</h3>
+                        <div class="relative max-w-2xl mx-auto">
+                            <div class="absolute left-1/2 w-0.5 h-full bg-sky-200 -translate-x-1/2"></div>
+                            <div class="relative timeline-item pl-12 pb-8"><div class="absolute -left-2.5 top-1 w-5 h-5 bg-sky-500 rounded-full border-4 border-white"></div><p class="font-bold text-lg text-sky-700">2025년</p><p class="text-gray-600">임상교육훈련센터 통합 홈페이지 오픈</p></div>
+                            <div class="relative timeline-item pl-12 pb-8"><div class="absolute -left-2.5 top-1 w-5 h-5 bg-sky-500 rounded-full border-4 border-white"></div><p class="font-bold text-lg text-sky-700">2024년</p><p class="text-gray-600">VR/AR 기반 시뮬레이션 장비 도입</p></div>
+                            <div class="relative timeline-item pl-12 pb-8"><div class="absolute -left-2.5 top-1 w-5 h-5 bg-sky-500 rounded-full border-4 border-white"></div><p class="font-bold text-lg text-sky-700">2023년</p><p class="text-gray-600">전남대학교병원 임상교육훈련센터 개소</p></div>
+                            <div class="relative timeline-item pl-12"><div class="absolute -left-2.5 top-1 w-5 h-5 bg-sky-500 rounded-full border-4 border-white"></div><p class="font-bold text-lg text-sky-700">2022년</p><p class="text-gray-600">임상교육훈련센터 설립 준비위원회 발족</p></div>
+                        </div>`,
+                    'about-org': `
+                        <h3 class="font-bold text-2xl mb-8 text-center text-gray-800">조직도</h3>
+                        <div class="max-w-4xl mx-auto text-center">
+                            <div class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg"><p class="font-bold">센터장</p><p class="text-sm">홍길동 (062-220-XXXX)</p></div>
+                            <div class="flex justify-center mt-4"><div class="w-px bg-blue-300 h-8"></div></div>
+                            <div class="flex justify-around mt-4">
+                                <div class="w-1/3"><div class="inline-block bg-sky-500 text-white px-6 py-3 rounded-lg shadow-md"><p class="font-bold">교육팀</p></div><div class="w-px bg-sky-300 h-4 mx-auto"></div><div class="bg-slate-100 p-4 rounded-lg space-y-2"><p><strong>팀장:</strong> 김교육 (062-220-XXXX)</p><p><strong>팀원:</strong> 이교육 (062-220-XXXX)</p></div></div>
+                                <div class="w-1/3"><div class="inline-block bg-sky-500 text-white px-6 py-3 rounded-lg shadow-md"><p class="font-bold">운영지원팀</p></div><div class="w-px bg-sky-300 h-4 mx-auto"></div><div class="bg-slate-100 p-4 rounded-lg space-y-2"><p><strong>팀장:</strong> 박운영 (062-220-XXXX)</p><p><strong>팀원:</strong> 최지원 (062-220-XXXX)</p></div></div>
+                            </div>
+                        </div>`,
+                    'about-location': `
+                        <h3 class="font-bold text-2xl mb-8 text-center text-gray-800">오시는 길</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div><div class="h-80 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">[네이버/카카오맵 지도 API 연동 영역]</div></div>
+                            <div class="space-y-4">
+                                <div><h4 class="font-bold text-lg">주소</h4><p>광주광역시 동구 제봉로 42 전남대학교병원</p></div>
+                                <div><h4 class="font-bold text-lg">대중교통</h4><p><strong>버스:</strong> 01, 09, 48, 55번 '전남대병원' 정류장 하차</p><p><strong>지하철:</strong> 1호선 남광주역 1번 출구 도보 10분</p></div>
+                                <button class="w-full bg-yellow-400 text-yellow-900 font-bold py-3 rounded-lg hover:bg-yellow-500 transition">카카오맵 길찾기 바로가기</button>
+                            </div>
+                        </div>`
+                };
+                if (aboutContentContainer) {
+                    aboutContentContainer.innerHTML = aboutTabContents['about-greeting'];
+                    aboutTabs.forEach(tab => {
+                        tab.addEventListener('click', () => {
+                            aboutTabs.forEach(t => t.classList.remove('active'));
+                            tab.classList.add('active');
+                            aboutContentContainer.innerHTML = aboutTabContents[tab.dataset.tab];
+                        });
+                    });
+                }
+            }
+            
+            // --- REVISED: Courses Page ---
+            function initializeCoursesPage() {
+                const courseListContainer = document.getElementById('course-list-container');
+                const courseCalendarView = document.getElementById('course-calendar-view');
+                const courseViewListBtn = document.getElementById('course-view-list-btn');
+                const courseViewCalendarBtn = document.getElementById('course-view-calendar-btn');
+                const searchInput = document.getElementById('course-search-input');
+                const categoryFilter = document.getElementById('course-category-filter');
+                const typeFilter = document.getElementById('course-type-filter');
+                const sessionFilter = document.getElementById('course-session-filter');
+                const statusFilter = document.getElementById('course-status-filter');
+                let calendarDate = new Date(2025, 7, 1); // August 2025
+
+                function getCourseStatus(course) {
+                    const now = new Date('2025-08-12'); // Simulate current date for 'pending' status
+                    const courseDate = new Date(course.date);
+                    if (courseDate > now && course.applicants < course.capacity) return { key: 'pending', text: '예정', color: 'gray' };
+                    if (course.applicants >= course.capacity) return { key: 'closed', text: '마감', color: 'red' };
+                    if (course.applicants >= course.capacity * 0.9) return { key: 'closing', text: '마감임박', color: 'yellow' };
+                    return { key: 'open', text: '신청가능', color: 'green' };
+                }
+
+                function filterAndRenderCourses() {
+                    if (!searchInput) return;
+                    const searchTerm = searchInput.value.toLowerCase();
+                    const category = categoryFilter.value;
+                    const type = typeFilter.value;
+                    const session = sessionFilter.value;
+                    const status = statusFilter.value;
+
+                    const filteredCourses = coursesData.filter(course => {
+                        const courseStatusInfo = getCourseStatus(course);
+                        
+                        const matchesSearch = course.title.toLowerCase().includes(searchTerm);
+                        const matchesCategory = category === 'all' || course.category === category;
+                        const matchesType = type === 'all' || course.type === type;
+                        const matchesSession = session === 'all' || course.session === session;
+                        const matchesStatus = status === 'all' || courseStatusInfo.key === status || (status === 'open' && (courseStatusInfo.key === 'open' || courseStatusInfo.key === 'closing'));
+                        
+                        return matchesSearch && matchesCategory && matchesType && matchesSession && matchesStatus;
+                    });
+                    
+                    renderCourseList(filteredCourses);
+                    renderCalendar(filteredCourses);
+                }
+
+                function renderCourseList(courses) {
+                    if (!courseListContainer) return;
+                    courseListContainer.innerHTML = '';
+                    if (courses.length === 0) {
+                        courseListContainer.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">해당 조건의 교육 과정이 없습니다.</p>`;
+                        return;
+                    }
+                    courses.forEach(course => {
+                        const status = getCourseStatus(course);
+                        const card = document.createElement('div');
+                        card.className = 'border p-4 rounded-lg bg-white shadow hover:shadow-lg cursor-pointer transition-shadow flex flex-col';
+                        card.innerHTML = `
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs bg-sky-100 text-sky-800 px-2 py-1 rounded-full">${course.category}</span>
+                                    <span class="text-sm font-semibold bg-${status.color}-100 text-${status.color}-800 px-2 py-1 rounded-full flex-shrink-0">${status.text}</span>
+                                </div>
+                                <h3 class="font-bold text-lg pr-2">${course.title} <span class="font-medium text-sky-700">(${course.session})</span></h3>
+                                <p class="text-sm text-gray-500 mt-2">${course.type}</p>
+                            </div>
+                            <div class="mt-4 border-t pt-3 text-sm text-gray-600">
+                                <p><strong>일시:</strong> ${course.date}</p>
+                                <p><strong>정원:</strong> ${course.applicants}/${course.capacity} ${course.waitlist > 0 ? `(대기 ${course.waitlist})` : ''}</p>
+                            </div>
+                        `;
+                        card.addEventListener('click', () => openCourseModal(course.id));
+                        courseListContainer.appendChild(card);
+                    });
+                }
+
+                function renderCalendar(courses) {
+                    if (!courseCalendarView) return;
+                    const year = calendarDate.getFullYear();
+                    const month = calendarDate.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+                    let cells = '';
+                    for (let i = 0; i < firstDayOfMonth; i++) { cells += `<div class="bg-slate-50"></div>`; }
+
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const events = courses.filter(c => {
+                            const courseDate = new Date(c.date);
+                            return courseDate.getFullYear() === year && courseDate.getMonth() === month && courseDate.getDate() === day;
+                        });
+                        cells += `
+                            <div class="p-1 h-24 overflow-y-auto border bg-white ${events.length > 0 ? 'has-event' : ''}">
+                                <span class="font-semibold">${day}</span>
+                                ${events.map(e => `<div class="text-xs bg-sky-500 text-white rounded px-1 mt-1 truncate" onclick="event.stopPropagation(); openCourseModal(${e.id})">${e.title}</div>`).join('')}
+                            </div>`;
+                    }
+                    
+                    courseCalendarView.innerHTML = `
+                        <div class="flex justify-between items-center mb-4">
+                            <button onclick="navigateCourseCalendar(-1)" class="p-2 rounded-md hover:bg-gray-200">&lt;</button>
+                            <h3 class="text-xl font-bold">${year}년 ${month + 1}월</h3>
+                            <button onclick="navigateCourseCalendar(1)" class="p-2 rounded-md hover:bg-gray-200">&gt;</button>
+                        </div>
+                        <div class="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200">
+                            ${['일', '월', '화', '수', '목', '금', '토'].map(day => `<div class="text-center font-semibold py-2 bg-gray-100">${day}</div>`).join('')}
+                            ${cells}
+                        </div>`;
+                }
+                
+                window.navigateCourseCalendar = (direction) => {
+                    calendarDate.setMonth(calendarDate.getMonth() + direction);
+                    filterAndRenderCourses();
+                };
+                
+                courseViewListBtn?.addEventListener('click', () => {
+                    courseViewListBtn.classList.add('active');
+                    courseViewCalendarBtn.classList.remove('active');
+                    document.getElementById('course-list-view').classList.remove('hidden');
+                    courseCalendarView.classList.add('hidden');
+                });
+
+                courseViewCalendarBtn?.addEventListener('click', () => {
+                    courseViewCalendarBtn.classList.add('active');
+                    courseViewListBtn.classList.remove('active');
+                    courseCalendarView.classList.remove('hidden');
+                    document.getElementById('course-list-view').classList.add('hidden');
+                });
+
+                [searchInput, categoryFilter, typeFilter, sessionFilter, statusFilter].forEach(el => {
+                    el?.addEventListener('input', filterAndRenderCourses);
+                    el?.addEventListener('change', filterAndRenderCourses);
+                });
+                
+                window.openCourseModal = (id) => {
+                    const course = coursesData.find(c => c.id === id);
+                    if (!course) return;
+                    const status = getCourseStatus(course);
+                    let buttonHtml = '';
+                    
+                    if (!isLoggedIn) {
+                        buttonHtml = `<button onclick="openLoginModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">로그인 후 신청</button>`;
+                    } else if(course.userStatus === 'applied') {
+                        buttonHtml = `<button onclick="cancelApplication(${course.id})" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">신청 취소</button>`;
+                    } else if (course.userStatus === 'waitlisted') {
+                        buttonHtml = `<button onclick="cancelApplication(${course.id})" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">대기 취소</button>`;
+                    } else {
+                        if (status.key === 'open' || status.key === 'closing') {
+                            const action = course.price > 0 ? `openPaymentModal(${course.id})` : `applyForCourse(${course.id}, true)`;
+                            buttonHtml = `<button onclick="${action}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">신청하기</button>`;
+                        } else if (status.key === 'closed') {
+                            buttonHtml = `<button onclick="applyForCourse(${course.id}, false)" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600">대기자 등록</button>`;
+                        } else {
+                             buttonHtml = `<button class="px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed" disabled>신청불가</button>`;
+                        }
+                    }
+
+                    modalContent.innerHTML = `
+                        <div class="p-6">
+                            <div class="flex justify-between items-start"><h3 class="text-2xl font-bold mb-4">${course.title} (${course.session})</h3><span class="text-sm bg-${status.color}-100 text-${status.color}-800 px-3 py-1 rounded-full flex-shrink-0">${status.text}</span></div>
+                            <div class="space-y-3 text-gray-700 border-t pt-4">
+                                <p><strong class="w-20 inline-block">교육비:</strong> ${course.price > 0 ? course.price.toLocaleString() + '원' : '무료'}</p>
+                                <p><strong class="w-20 inline-block">유형:</strong> ${course.type}</p>
+                                <p><strong class="w-20 inline-block">강사:</strong> ${course.instructor}</p>
+                                <p><strong class="w-20 inline-block">일시:</strong> ${course.date} ${course.time}</p>
+                                <p><strong class="w-20 inline-block">장소:</strong> ${course.location}</p>
+                                <p><strong class="w-20 inline-block">정원:</strong> ${course.applicants}/${course.capacity} 명 ${course.waitlist > 0 ? `(대기 ${course.waitlist}명)` : ''}</p>
+                                <div class="pt-4 mt-4 border-t">
+                                    <strong class="w-20 inline-block mb-2">과정소개:</strong>
+                                    <p class="text-sm leading-relaxed">${course.description}</p>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end space-x-3"><button class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300" onclick="closeModal()">닫기</button>${buttonHtml}</div>
+                        </div>`;
+                    openModal();
+                }
+                
+                window.openPaymentModal = (courseId) => {
+                    const course = coursesData.find(c => c.id === courseId);
+                    if (!course) return;
+                    modalContent.innerHTML = `
+                        <div class="p-6">
+                            <h3 class="text-2xl font-bold mb-4">결제하기</h3>
+                            <div class="bg-slate-50 p-4 rounded-lg space-y-2">
+                                <div class="flex justify-between"><span class="text-gray-600">과정명</span><span class="font-semibold">${course.title}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-600">교육비</span><span class="font-semibold">${course.price.toLocaleString()}원</span></div>
+                            </div>
+                            <div class="mt-6">
+                                <h4 class="font-semibold mb-2">결제 수단</h4>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-slate-50"><input type="radio" name="payment" class="mr-3" checked>신용카드</label>
+                                    <label class="flex items-center p-3 border rounded-lg hover:bg-slate-50"><input type="radio" name="payment" class="mr-3">실시간 계좌이체</label>
+                                </div>
+                            </div>
+                            <div class="mt-8 flex justify-end space-x-3">
+                                <button class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300" onclick="closeModal()">취소</button>
+                                <button onclick="applyForCourse(${course.id}, true, true)" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">결제 및 신청</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                window.applyForCourse = (courseId, isApplication, isPaid = false) => {
+                    const course = coursesData.find(c => c.id === courseId);
+                    if (!course) return;
+                    if (isApplication) { 
+                        course.applicants++; 
+                        course.userStatus = 'applied'; 
+                        const message = isPaid 
+                            ? '결제가 완료되었으며, 수강 신청이 완료되었습니다.' 
+                            : '수강 신청이 완료되었습니다.';
+                        showNotification(`${message} (SMS 알림 시뮬레이션)`);
+                        if (isPaid) course.paymentStatus = '결제완료';
+                    } else { 
+                        course.waitlist++; 
+                        course.userStatus = 'waitlisted'; 
+                        showNotification('대기자로 등록되었습니다. (SMS 알림 시뮬레이션)'); 
+                    }
+                    closeModal();
+                    filterAndRenderCourses();
+                }
+
+                window.cancelApplication = (courseId) => {
+                    const course = coursesData.find(c => c.id === courseId);
+                    if (!course) return;
+                    if (course.userStatus === 'applied') { course.applicants--; showNotification('수강 신청이 취소되었습니다. (SMS 알림 시뮬레이션)'); } 
+                    else if (course.userStatus === 'waitlisted') { course.waitlist--; showNotification('대기자 등록이 취소되었습니다. (SMS 알림 시뮬레이션)'); }
+                    course.userStatus = null;
+                    if (course.price > 0) course.paymentStatus = '결제대기'; // Reset payment status on cancellation
+                    closeModal();
+                    filterAndRenderCourses();
+                }
+                
+                filterAndRenderCourses();
+            }
+            
+            // --- REVISED: Rental Page ---
+            function initializeRentalPage() {
+                const rentalTabs = document.querySelectorAll('.rental-tab-button');
+                const rentalTabContents = document.querySelectorAll('.rental-tab-content');
+                
+                // State for facility and equipment views
+                let facilityState = { selectedId: null, floor: null, view: 'month', date: new Date(2025, 7, 1) }; // Default to August 2025
+                let equipmentState = {};
+
+                // --- Calendar Generation Helpers ---
+                function getDaysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
+                function getFirstDayOfMonth(year, month) { return new Date(year, month, 1).getDay(); }
+
+                function generateMonthView(state, bookings, clickHandler) {
+                    const year = state.date.getFullYear();
+                    const month = state.date.getMonth();
+                    const daysInMonth = getDaysInMonth(year, month);
+                    const firstDay = getFirstDayOfMonth(year, month);
+                    
+                    let cells = '';
+                    for (let i = 0; i < firstDay; i++) { cells += `<div class="bg-slate-50"></div>`; }
+                    
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const hasBooking = bookings[dateStr] && bookings[dateStr].length > 0;
+                        cells += `<div class="text-center p-2 border ${hasBooking ? 'bg-sky-100 font-bold' : ''} cursor-pointer hover:bg-sky-200" onclick="${clickHandler}('${dateStr}')">${day}</div>`;
+                    }
+                    
+                    return `<div class="grid grid-cols-7 gap-px bg-gray-200 border">
+                                ${['일', '월', '화', '수', '목', '금', '토'].map(d => `<div class="text-center font-semibold py-2 bg-gray-100 text-sm">${d}</div>`).join('')}
+                                ${cells}
+                            </div>`;
+                }
+
+                function generateWeekView(state, bookings, clickHandler) {
+                    const year = state.date.getFullYear();
+                    const month = state.date.getMonth();
+                    const day = state.date.getDate();
+                    const dayOfWeek = state.date.getDay();
+
+                    let weekHtml = `<div class="border">`;
+                    const days = ['일', '월', '화', '수', '목', '금', '토'];
+
+                    for(let i=0; i<7; i++) {
+                        const currentDate = new Date(year, month, day - dayOfWeek + i);
+                        const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+                        const dayBookings = bookings[dateStr] || [];
+                        weekHtml += `
+                            <div class="flex border-b last:border-b-0">
+                                <div class="w-24 p-2 border-r bg-slate-50 text-center">
+                                    <div class="font-bold">${days[i]}</div>
+                                    <div class="text-sm">${currentDate.getDate()}</div>
+                                </div>
+                                <div class="flex-1 p-2 grid grid-cols-4 gap-1">
+                                    ${dayBookings.length > 0 
+                                        ? dayBookings.map(b => `<div class="bg-sky-500 text-white text-xs rounded p-1 text-center">${b}</div>`).join('')
+                                        : '<span class="col-span-4 text-gray-400 text-sm self-center">예약 없음</span>'
+                                    }
+                                </div>
+                            </div>
+                        `;
+                    }
+                    weekHtml += `</div>`;
+                    return weekHtml;
+                }
+
+                function generateDayView(state, bookings, clickHandler) {
+                    const dateStr = state.date.toISOString().split('T')[0];
+                    const bookingsToday = bookings[dateStr] || [];
+                    const timeSlots = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+                    return `<div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                ${timeSlots.map(slot => {
+                                    const isBooked = bookingsToday.includes(slot);
+                                    return `<div class="time-slot p-2 text-center rounded-md border ${isBooked ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-100 text-blue-800 cursor-pointer available'}" ${isBooked ? 'disabled' : `onclick="${clickHandler}('${dateStr}', '${slot}')"`}>${slot}</div>`;
+                                }).join('')}
+                            </div>`;
+                }
+
+                // --- Facility Rental Logic ---
+                const floorPlanContainer = document.getElementById('floor-plan-container');
+                const floorSelector = document.getElementById('floor-selector');
+                const bookingDetailsContainer = document.getElementById('booking-details-container');
+
+                function renderFloorPlan(floor) {
+                    if (!floorPlanContainer) return;
+                    floorPlanContainer.innerHTML = `<div class="grid grid-cols-3 grid-rows-2 gap-4 h-full"></div>`;
+                    const grid = floorPlanContainer.querySelector('.grid');
+                    facilityData[floor].forEach(facility => {
+                        const roomEl = document.createElement('div');
+                        roomEl.id = facility.id;
+                        roomEl.className = `floor-plan-room bg-sky-200 flex items-center justify-center rounded-md cursor-pointer text-center p-2 font-semibold ${facility.gridClass}`;
+                        roomEl.textContent = facility.name;
+                        roomEl.addEventListener('click', () => selectFacility(facility.id, floor));
+                        grid.appendChild(roomEl);
+                    });
+                }
+
+                function selectFacility(facilityId, floor) {
+                    facilityState.selectedId = facilityId;
+                    facilityState.floor = floor;
+                    facilityState.view = 'month'; // Reset to month view on new selection
+                    facilityState.date = new Date(2025, 7, 1);
+                    document.querySelectorAll('.floor-plan-room').forEach(r => r.classList.remove('selected'));
+                    document.getElementById(facilityId)?.classList.add('selected');
+                    updateFacilityDetails();
+                }
+                
+                function updateFacilityDetails() {
+                    if (!bookingDetailsContainer || !facilityState.selectedId) return;
+                    const facility = facilityData[facilityState.floor].find(f => f.id === facilityState.selectedId);
+                    if (!facility) return;
+
+                    let calendarHtml = '';
+                    let title = '';
+                    const { view, date } = facilityState;
+                    
+                    if (view === 'month') {
+                        title = `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+                        calendarHtml = generateMonthView(facilityState, facility.bookings, 'window.selectDateFromMonthView');
+                    } else if (view === 'week') {
+                        const startOfWeek = new Date(date.setDate(date.getDate() - date.getDay()));
+                        const endOfWeek = new Date(date.setDate(date.getDate() - date.getDay() + 6));
+                        title = `${startOfWeek.toLocaleDateString('ko-KR')} - ${endOfWeek.toLocaleDateString('ko-KR')}`;
+                        calendarHtml = generateWeekView(facilityState, facility.bookings, 'window.openFacilityBookingModal');
+                    } else if (view === 'day') {
+                        title = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+                        calendarHtml = generateDayView(facilityState, facility.bookings, 'window.openFacilityBookingModal');
+                    }
+
+                    bookingDetailsContainer.innerHTML = `
+                        <h5 class="font-bold text-lg">${facility.name}</h5>
+                        <div class="flex justify-between items-center my-3">
+                            <button onclick="navigateCalendar('facility', -1)" class="p-1 rounded-md hover:bg-gray-200">&lt;</button>
+                            <span class="text-sm text-gray-700 font-semibold text-center">${title}</span>
+                             <button onclick="navigateCalendar('facility', 1)" class="p-1 rounded-md hover:bg-gray-200">&gt;</button>
+                        </div>
+                        <div class="flex justify-center items-center border border-gray-300 rounded-md mb-4">
+                            <button data-view="month" class="calendar-view-toggle flex-1 px-2 py-1 text-xs" onclick="setFacilityView('month')">월</button>
+                            <button data-view="week" class="calendar-view-toggle flex-1 px-2 py-1 text-xs border-l border-r" onclick="setFacilityView('week')">주</button>
+                            <button data-view="day" class="calendar-view-toggle flex-1 px-2 py-1 text-xs" onclick="setFacilityView('day')">일</button>
+                        </div>
+                        <div id="facility-calendar-grid">${calendarHtml}</div>
+                    `;
+                    document.querySelectorAll('#booking-details-container .calendar-view-toggle').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
+                }
+
+                window.setFacilityView = (view) => {
+                    if(facilityState.selectedId) {
+                        facilityState.view = view;
+                        updateFacilityDetails();
+                    }
+                }
+                
+                window.selectDateFromMonthView = (dateStr) => {
+                    facilityState.date = new Date(dateStr);
+                    setFacilityView('day');
+                }
+
+                window.navigateCalendar = (type, direction) => {
+                    const state = type === 'facility' ? facilityState : equipmentState[equipmentState.currentId];
+                    if (!state) return;
+
+                    if (state.view === 'month') state.date.setMonth(state.date.getMonth() + direction);
+                    else if (state.view === 'week') state.date.setDate(state.date.getDate() + 7 * direction);
+                    else state.date.setDate(state.date.getDate() + direction);
+                    
+                    if (type === 'facility') updateFacilityDetails();
+                    else updateEquipmentCalendar(equipmentState.currentId);
+                }
+
+                // --- Equipment Rental Logic ---
+                const equipmentListContainer = document.getElementById('equipment-list-container');
+
+                function renderEquipmentList() {
+                    if (!equipmentListContainer) return;
+                    equipmentListContainer.innerHTML = '';
+                    equipmentData.forEach(eq => {
+                        const card = document.createElement('div');
+                        card.className = 'border p-4 rounded-lg bg-white shadow';
+                        card.innerHTML = `
+                            <div class="w-full h-40 bg-gray-200 rounded-md mb-4 flex items-center justify-center text-gray-400">[장비 이미지]</div>
+                            <h4 class="font-bold text-lg">${eq.name}</h4>
+                            <p class="text-sm text-gray-500">${eq.spec}</p>
+                            <button onclick="openEquipmentModal('${eq.id}')" class="w-full mt-4 bg-sky-600 text-white py-2 rounded-md hover:bg-sky-700">대여 현황 보기 및 신청</button>
+                        `;
+                        equipmentListContainer.appendChild(card);
+                    });
+                }
+
+                window.openEquipmentModal = (equipmentId) => {
+                    if (!isLoggedIn) { openLoginModal(); return; }
+                    if (!equipmentState[equipmentId]) {
+                        equipmentState[equipmentId] = { view: 'month', date: new Date(2025, 7, 1), selectedSlot: null };
+                    }
+                    equipmentState.currentId = equipmentId;
+                    renderEquipmentCalendarModal(equipmentId);
+                }
+
+                function renderEquipmentCalendarModal(equipmentId) {
+                    const equipment = equipmentData.find(eq => eq.id === equipmentId);
+                    modalContent.innerHTML = `
+                        <div class="p-6">
+                            <h3 class="text-2xl font-bold mb-2">${equipment.name} 대여 현황</h3>
+                            <div id="equipment-calendar-container"></div>
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300" onclick="closeModal()">취소</button>
+                                <button id="equipment-apply-btn" onclick="confirmEquipmentBooking('${equipmentId}')" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400" disabled>대여 신청</button>
+                            </div>
+                        </div>`;
+                    updateEquipmentCalendar(equipmentId);
+                    openModal();
+                }
+
+                function updateEquipmentCalendar(equipmentId) {
+                    const state = equipmentState[equipmentId];
+                    const equipment = equipmentData.find(eq => eq.id === equipmentId);
+                    const container = document.getElementById('equipment-calendar-container');
+                    if (!state || !equipment || !container) return;
+
+                    let calendarHtml = '';
+                    let title = '';
+                    const { view, date } = state;
+                    
+                    if (view === 'month') {
+                        title = `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+                        calendarHtml = generateMonthView(state, equipment.bookings, 'window.selectEquipmentDateFromMonthView');
+                    } else if (view === 'week') {
+                        const startOfWeek = new Date(new Date(date).setDate(date.getDate() - date.getDay()));
+                        const endOfWeek = new Date(new Date(date).setDate(date.getDate() - date.getDay() + 6));
+                        title = `${startOfWeek.toLocaleDateString('ko-KR')} - ${endOfWeek.toLocaleDateString('ko-KR')}`;
+                        calendarHtml = generateWeekView(state, equipment.bookings, 'window.openEquipmentBookingModal');
+                    } else if (view === 'day') {
+                        title = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+                        calendarHtml = generateDayView(state, equipment.bookings, 'window.selectEquipmentTimeSlot');
+                    }
+                    
+                    container.innerHTML = `
+                        <div class="flex justify-between items-center my-3">
+                            <button onclick="navigateCalendar('equipment', -1)" class="p-1 rounded-md hover:bg-gray-200">&lt;</button>
+                            <span class="text-sm text-gray-700 font-semibold text-center">${title}</span>
+                            <button onclick="navigateCalendar('equipment', 1)" class="p-1 rounded-md hover:bg-gray-200">&gt;</button>
+                        </div>
+                        <div class="flex justify-center items-center border border-gray-300 rounded-md mb-4">
+                            <button data-view="month" class="calendar-view-toggle flex-1 px-2 py-1 text-xs" onclick="setEquipmentView('${equipmentId}', 'month')">월</button>
+                            <button data-view="week" class="calendar-view-toggle flex-1 px-2 py-1 text-xs border-l border-r" onclick="setEquipmentView('${equipmentId}', 'week')">주</button>
+                            <button data-view="day" class="calendar-view-toggle flex-1 px-2 py-1 text-xs" onclick="setEquipmentView('${equipmentId}', 'day')">일</button>
+                        </div>
+                        <div id="equipment-calendar-grid">${calendarHtml}</div>
+                    `;
+                    document.querySelectorAll('#equipment-calendar-container .calendar-view-toggle').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
+                }
+                
+                window.setEquipmentView = (equipmentId, view) => {
+                    equipmentState[equipmentId].view = view;
+                    updateEquipmentCalendar(equipmentId);
+                }
+                window.selectEquipmentDateFromMonthView = (dateStr) => {
+                    const id = equipmentState.currentId;
+                    equipmentState[id].date = new Date(dateStr);
+                    setEquipmentView(id, 'day');
+                }
+                window.selectEquipmentTimeSlot = (dateStr, time) => {
+                    const id = equipmentState.currentId;
+                    const el = event.target;
+                    document.querySelectorAll('#equipment-calendar-grid .time-slot').forEach(slot => slot.classList.remove('selected'));
+                    el.classList.add('selected');
+                    equipmentState[id].selectedSlot = { date: dateStr, time: time };
+                    document.getElementById('equipment-apply-btn').disabled = false;
+                }
+
+                window.confirmEquipmentBooking = (equipmentId) => {
+                    const state = equipmentState[equipmentId];
+                    const equipment = equipmentData.find(eq => eq.id === equipmentId);
+                    if (state.selectedSlot && equipment) {
+                        const { date, time } = state.selectedSlot;
+                        if (!equipment.bookings[date]) equipment.bookings[date] = [];
+                        equipment.bookings[date].push(time);
+                        showNotification(`${equipment.name} ${date} ${time} 대여 신청이 완료되었습니다.`);
+                        closeModal();
+                    }
+                }
+                
+                window.openFacilityBookingModal = (date, time) => {
+                    if (!isLoggedIn) { openLoginModal(); return; }
+                    const facility = facilityData[facilityState.floor].find(f => f.id === facilityState.selectedId);
+                    modalContent.innerHTML = `
+                        <div class="p-6"><h3 class="text-2xl font-bold mb-4">시설 예약 신청</h3><div class="space-y-2 text-gray-700 border-t pt-4"><p><strong class="w-20 inline-block">시설명:</strong> ${facility.name}</p><p><strong class="w-20 inline-block">예약일:</strong> ${date}</p><p><strong class="w-20 inline-block">예약시간:</strong> ${time}</p></div><div class="mt-6 flex justify-end space-x-3"><button class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300" onclick="closeModal()">취소</button><button onclick="confirmFacilityBooking('${facility.id}', '${date}', '${time}')" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">예약 신청</button></div></div>`;
+                    openModal();
+                }
+
+                window.confirmFacilityBooking = (facilityId, date, time) => {
+                    const facility = facilityData[facilityState.floor].find(f => f.id === facilityId);
+                    if (facility) {
+                        if (!facility.bookings[date]) facility.bookings[date] = [];
+                        facility.bookings[date].push(time);
+                        updateFacilityDetails();
+                    }
+                    showNotification("시설 예약 신청이 완료되었습니다.");
+                    closeModal();
+                }
+
+                // Initial render
+                rentalTabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        rentalTabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        const targetId = tab.dataset.tab;
+                        rentalTabContents.forEach(content => {
+                            content.classList.toggle('hidden', content.id !== `${targetId}-content`);
+                        });
+                    });
+                });
+                renderFloorPlan('1');
+                renderEquipmentList();
+            }
+
+            // --- Community Page ---
+            const mainContentContainer = document.getElementById('community-main-content');
+            const boardRenderers = {
+                _renderList: (boardKey, boardTitle, canWrite) => {
+                    const items = communityData[boardKey] || [];
+                    return `
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-2xl font-bold text-gray-800">${boardTitle}</h3>
+                            ${canWrite && isLoggedIn ? `<button onclick="openWriteModal('${boardKey}')" class="bg-sky-600 text-white px-4 py-2 rounded-md text-sm hover:bg-sky-700">글쓰기</button>` : ''}
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="border-b-2 border-gray-200 bg-slate-50">
+                                    <tr>
+                                        <th class="p-3 text-sm font-semibold tracking-wide text-center w-16">번호</th>
+                                        <th class="p-3 text-sm font-semibold tracking-wide text-left">제목</th>
+                                        <th class="p-3 text-sm font-semibold tracking-wide text-center w-32">작성자</th>
+                                        <th class="p-3 text-sm font-semibold tracking-wide text-center w-32">작성일</th>
+                                        <th class="p-3 text-sm font-semibold tracking-wide text-center w-20">조회수</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${items.length > 0 ? items.map(item => `
+                                        <tr class="border-b border-gray-200 hover:bg-slate-50 cursor-pointer" onclick="showPostDetail('${boardKey}', ${item.id})">
+                                            <td class="p-3 text-sm text-gray-700 text-center">${item.id}</td>
+                                            <td class="p-3 text-sm text-gray-700">${item.title}</td>
+                                            <td class="p-3 text-sm text-gray-700 text-center">${item.author}</td>
+                                            <td class="p-3 text-sm text-gray-700 text-center">${item.date}</td>
+                                            <td class="p-3 text-sm text-gray-700 text-center">${item.views}</td>
+                                        </tr>`).join('') : `<tr><td colspan="5" class="text-center py-10 text-gray-500">게시글이 없습니다.</td></tr>`
+                                    }
+                                </tbody>
+                            </table>
+                        </div>`;
+                },
+                news: () => boardRenderers._renderList('news', '센터소식', false),
+                announcements: () => boardRenderers._renderList('announcements', '공지사항', false),
+                'ext-edu': () => boardRenderers._renderList('ext-edu', '외부 교육모집', false),
+                vod: () => {
+                    const items = communityData.vod || [];
+                    return `
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-2xl font-bold text-gray-800">VOD</h3>
+                            ${isLoggedIn ? `<button onclick="openWriteModal('vod')" class="bg-sky-600 text-white px-4 py-2 rounded-md text-sm hover:bg-sky-700">영상 업로드</button>` : ''}
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${items.map(item => `
+                                <div class="rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow cursor-pointer">
+                                    <img src="${item.thumbnail}" alt="${item.title}" class="w-full h-40 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/475569?text=Image+Error';">
+                                    <div class="p-4 bg-white">
+                                        <h4 class="font-bold text-md truncate">${item.title}</h4>
+                                        <p class="text-sm text-gray-600 mt-1">${item.instructor}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>`;
+                },
+                freeboard: () => boardRenderers._renderList('freeboard', '자유게시판', true),
+                faq: () => {
+                    return `<h3 class="text-2xl font-bold text-gray-800 mb-6">FAQ</h3>
+                            <div class="space-y-4">${communityData.faq.map((item, index) => `
+                        <div class="border rounded-lg bg-white">
+                            <button class="w-full p-4 text-left font-semibold flex justify-between items-center hover:bg-slate-50" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('svg').classList.toggle('rotate-180')">
+                                <span>Q. ${item.q}</span>
+                                <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div class="p-4 border-t bg-slate-50 hidden"><p class="text-gray-700 leading-relaxed">${item.a}</p></div>
+                        </div>
+                    `).join('')}</div>`;
+                },
+                qna: () => {
+                    if (!isLoggedIn) return `<div class="text-center py-20 text-gray-500">
+                        <h3 class="text-xl font-semibold">1:1 문의</h3>
+                        <p class="mt-2">로그인 후 이용 가능합니다.</p>
+                        <button class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700" onclick="openLoginModal()">로그인하기</button>
+                    </div>`;
+                    
+                    const items = communityData.qna.filter(item => item.author === currentUser.name);
+                    return `<div class="flex justify-between items-center mb-6">
+                                <h3 class="text-2xl font-bold text-gray-800">1:1 문의</h3>
+                                <button onclick="openWriteModal('qna')" class="bg-sky-600 text-white px-4 py-2 rounded-md text-sm hover:bg-sky-700">문의하기</button>
+                            </div>
+                             <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="border-b-2 border-gray-200 bg-slate-50">
+                                        <tr>
+                                            <th class="p-3 text-sm font-semibold tracking-wide text-center w-24">상태</th>
+                                            <th class="p-3 text-sm font-semibold tracking-wide text-left">제목</th>
+                                            <th class="p-3 text-sm font-semibold tracking-wide text-center w-32">작성자</th>
+                                            <th class="p-3 text-sm font-semibold tracking-wide text-center w-32">작성일</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${items.length > 0 ? items.map(item => `
+                                            <tr class="border-b border-gray-200 hover:bg-slate-50 cursor-pointer" onclick="showPostDetail('qna', ${item.id})">
+                                                <td class="p-3 text-sm text-gray-700 text-center">
+                                                    <span class="px-2 py-1 text-xs rounded-full ${item.status === '답변완료' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${item.status}</span>
+                                                </td>
+                                                <td class="p-3 text-sm text-gray-700">${item.title}</td>
+                                                <td class="p-3 text-sm text-gray-700 text-center">${item.author}</td>
+                                                <td class="p-3 text-sm text-gray-700 text-center">${item.date}</td>
+                                            </tr>`).join('') : `<tr><td colspan="4" class="text-center py-10 text-gray-500">작성한 문의가 없습니다.</td></tr>`
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>`;
+                }
+            };
+            
+            function showBoardList(boardId) {
+                if (mainContentContainer && boardRenderers[boardId]) {
+                    mainContentContainer.innerHTML = boardRenderers[boardId]();
+                    document.querySelectorAll('.community-sidebar-link').forEach(link => {
+                        link.classList.toggle('active', link.dataset.board === boardId);
+                    });
+                }
+            }
+            
+            window.showPostDetail = (boardKey, postId) => {
+                const post = communityData[boardKey]?.find(p => p.id === postId);
+                if (!post || !mainContentContainer) return;
+
+                let detailHtml = `
+                    <div>
+                        <h3 class="text-3xl font-bold text-gray-800">${post.title}</h3>
+                        <div class="flex items-center text-sm text-gray-500 mt-3 mb-5 border-b pb-4">
+                            <span>작성자: ${post.author}</span>
+                            <span class="mx-2">|</span>
+                            <span>작성일: ${post.date}</span>
+                            ${boardKey !== 'qna' ? `<span class="mx-2">|</span><span>조회수: ${post.views}</span>` : ''}
+                        </div>
+                        <div class="prose max-w-none text-gray-800 leading-relaxed min-h-[200px] py-4">
+                            ${post.content.replace(/\n/g, '<br>')}
+                        </div>
+                `;
+
+                if (boardKey === 'qna') {
+                    const answerHtml = post.answer 
+                        ? `<div class="prose max-w-none text-gray-800 leading-relaxed">${post.answer.replace(/\n/g, '<br>')}</div>`
+                        : `<p class="text-gray-500">답변 준비중입니다.</p>`;
+                    
+                    detailHtml += `
+                        <div class="mt-8 pt-6 border-t">
+                            <h4 class="text-xl font-bold text-sky-800 mb-4">답변</h4>
+                            <div class="bg-sky-50 p-6 rounded-lg">
+                                ${answerHtml}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                detailHtml += `
+                        <div class="flex justify-end mt-8 border-t pt-4">
+                            <button onclick="showBoardList('${boardKey}')" class="bg-gray-600 text-white px-5 py-2 rounded-md text-sm hover:bg-gray-700">목록으로</button>
+                        </div>
+                    </div>
+                `;
+                
+                mainContentContainer.innerHTML = detailHtml;
+            };
+
+            function initializeCommunityPage() {
+                const sidebarLinks = document.querySelectorAll('.community-sidebar-link');
+                sidebarLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        showBoardList(link.dataset.board);
+                    });
+                });
+                window.showBoardList = showBoardList;
+                showBoardList('news');
+            }
+
+            window.openWriteModal = (board) => {
+                const titles = {
+                    news: '센터소식 작성',
+                    announcements: '공지사항 작성',
+                    'ext-edu': '외부 교육모집 작성',
+                    vod: 'VOD 업로드',
+                    freeboard: '자유게시판 글쓰기',
+                    qna: '1:1 문의 작성'
+                };
+
+                modalContent.innerHTML = `
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold mb-4">${titles[board] || '글쓰기'}</h3>
+                        <form id="post-form" class="space-y-4">
+                            <input type="text" id="post-title-input" placeholder="제목" class="w-full p-2 border rounded-md" required>
+                            <textarea id="post-content-input" placeholder="내용" rows="8" class="w-full p-2 border rounded-md" required></textarea>
+                            ${board === 'vod' ? '<input type="text" placeholder="영상 URL" class="w-full p-2 border rounded-md">' : ''}
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button type="button" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300" onclick="closeModal()">취소</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">등록</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                openModal();
+                document.getElementById('post-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    submitPost(board);
+                });
+            }
+            
+            window.submitPost = (boardKey) => {
+                const titleInput = document.getElementById('post-title-input');
+                const contentInput = document.getElementById('post-content-input');
+
+                const newPost = {
+                    id: Date.now(), // Simple unique ID
+                    title: titleInput.value,
+                    author: currentUser.name,
+                    date: new Date().toISOString().split('T')[0],
+                    content: contentInput.value,
+                };
+
+                if (boardKey === 'qna') {
+                    newPost.status = '답변대기';
+                    newPost.answer = null;
+                } else {
+                    newPost.views = 0;
+                }
+
+                communityData[boardKey].unshift(newPost);
+                
+                showNotification('게시글이 등록되었습니다.');
+                closeModal();
+                showBoardList(boardKey);
+            }
+            
+            // --- REVISED: MyPage ---
+            function initializeMyPage() {
+                const mypageContentContainer = document.getElementById('mypage-content');
+                const mypageTabs = document.querySelectorAll('.mypage-tab-button');
+                
+                const mypageTabContents = {
+                    'mypage-learning': () => {
+                        const myCourses = coursesData.filter(c => c.userStatus);
+                        if (myCourses.length === 0) return `<div class="text-center py-10 text-gray-500">신청한 교육 과정이 없습니다.</div>`;
+                        return `<div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                            <thead class="border-b bg-slate-50"><tr><th class="p-3">과정명</th><th class="p-3">교육일</th><th class="p-3">상태</th><th class="p-3 text-center">관리</th></tr></thead>
+                            <tbody>${myCourses.map(c => `
+                                <tr class="border-b hover:bg-slate-50">
+                                    <td class="p-3 font-semibold">${c.title}</td>
+                                    <td class="p-3">${c.date}</td>
+                                    <td class="p-3"><span class="px-2 py-1 text-xs rounded-full ${c.completed ? 'bg-gray-200 text-gray-800' : (c.userStatus === 'applied' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800')}">${c.completed ? '수료' : (c.userStatus === 'applied' ? '수강중' : '대기중')}</span></td>
+                                    <td class="p-3 text-center space-x-2">
+                                        ${c.completed ? `
+                                            <button class="text-sky-600 hover:underline text-sm" onclick="openGradeModal(${c.id})">성적/영상</button>
+                                            <button class="text-sky-600 hover:underline text-sm" onclick="openSurveyModal(${c.id})">${c.surveyCompleted ? '평가완료' : '만족도 평가'}</button>
+                                        ` : '-'}
+                                    </td>
+                                </tr>
+                            `).join('')}</tbody>
+                        </table></div>`;
+                    },
+                    'mypage-schedule': () => {
+                        return `<div>
+                                    <div class="flex justify-end mb-4">
+                                        <button id="mypage-view-list-btn" class="course-view-toggle active p-2 border rounded-l-md text-sm">목록형</button>
+                                        <button id="mypage-view-calendar-btn" class="course-view-toggle p-2 border rounded-r-md text-sm">캘린더형</button>
+                                    </div>
+                                    <div id="mypage-schedule-list-view"></div>
+                                    <div id="mypage-schedule-calendar-view" class="hidden"></div>
+                                </div>`;
+                    },
+                    'mypage-payment': () => {
+                        const myPayments = coursesData.filter(c => c.userStatus && c.price);
+                        if (myPayments.length === 0) return `<div class="text-center py-10 text-gray-500">결제 내역이 없습니다.</div>`;
+                        return `<div class="overflow-x-auto"><table class="w-full text-left border-collapse">
+                            <thead class="border-b bg-slate-50"><tr><th class="p-3">과정명</th><th class="p-3">결제금액</th><th class="p-3">결제일</th><th class="p-3">상태</th></tr></thead>
+                            <tbody>${myPayments.map(c => `
+                                <tr class="border-b hover:bg-slate-50">
+                                    <td class="p-3">${c.title}</td>
+                                    <td class="p-3">${c.price.toLocaleString()}원</td>
+                                    <td class="p-3">${c.paymentStatus === '결제완료' ? new Date(new Date(c.date).getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '-'}</td>
+                                    <td class="p-3"><span class="px-2 py-1 text-xs rounded-full ${c.paymentStatus === '결제완료' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${c.paymentStatus}</span></td>
+                                </tr>
+                            `).join('')}</tbody>
+                        </table></div>`;
+                    },
+                    'mypage-rental': () => {
+                        if (myRentalData.length === 0) return `<div class="text-center py-10 text-gray-500">대여 신청 내역이 없습니다.</div>`;
+                         return `<div class="overflow-x-auto"><table class="w-full text-left border-collapse">
+                            <thead class="border-b bg-slate-50"><tr><th class="p-3">구분</th><th class="p-3">대여 항목</th><th class="p-3">대여일</th><th class="p-3">상태</th></tr></thead>
+                            <tbody>${myRentalData.map(r => `
+                                <tr class="border-b hover:bg-slate-50">
+                                    <td class="p-3">${r.type === 'facility' ? '시설' : '장비'}</td>
+                                    <td class="p-3">${r.name}</td>
+                                    <td class="p-3">${r.date} ${r.time}</td>
+                                    <td class="p-3"><span class="px-2 py-1 text-xs rounded-full ${r.status === '승인완료' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${r.status}</span></td>
+                                </tr>
+                            `).join('')}</tbody>
+                        </table></div>`;
+                    },
+                    'mypage-certs': () => {
+                        const certifiableCourses = coursesData.filter(c => c.userStatus === 'applied' && c.completed);
+                         if (certifiableCourses.length === 0) return `<div class="text-center py-10 text-gray-500">발급 가능한 증명서가 없습니다.</div>`;
+                        return `<div class="overflow-x-auto"><table class="w-full text-left border-collapse">
+                            <thead class="border-b bg-slate-50"><tr><th class="p-3">이수 과정</th><th class="p-3">이수일</th><th class="p-3">증명서</th></tr></thead>
+                            <tbody>${certifiableCourses.map(c => `
+                                <tr class="border-b hover:bg-slate-50">
+                                    <td class="p-3">${c.title}</td>
+                                    <td class="p-3">${c.date}</td>
+                                    <td class="p-3"><button onclick="showNotification('증명서 다운로드를 시작합니다.')" class="bg-sky-600 text-white px-3 py-1 rounded-md text-sm hover:bg-sky-700">발급</button></td>
+                                </tr>
+                            `).join('')}</tbody>
+                        </table></div>`;
+                    }
+                };
+
+                function renderMyPageContent(tabId) {
+                    if (mypageContentContainer && mypageTabContents[tabId]) {
+                        mypageContentContainer.innerHTML = mypageTabContents[tabId]();
+                        if (tabId === 'mypage-schedule') {
+                            setupMyScheduleView();
+                        }
+                    }
+                }
+                
+                function setupMyScheduleView() {
+                    const listView = document.getElementById('mypage-schedule-list-view');
+                    const calendarView = document.getElementById('mypage-schedule-calendar-view');
+                    const listBtn = document.getElementById('mypage-view-list-btn');
+                    const calendarBtn = document.getElementById('mypage-view-calendar-btn');
+                    
+                    const myCourses = coursesData.filter(c => c.userStatus);
+
+                    function renderList() {
+                        listView.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left border-collapse">
+                            <thead class="border-b bg-slate-50"><tr><th class="p-3">과정명</th><th class="p-3">교육일</th><th class="p-3">시간</th><th class="p-3">장소</th></tr></thead>
+                            <tbody>${myCourses.map(c => `
+                                <tr class="border-b hover:bg-slate-50">
+                                    <td class="p-3">${c.title}</td><td class="p-3">${c.date}</td><td class="p-3">${c.time}</td><td class="p-3">${c.location}</td>
+                                </tr>`).join('')}</tbody>
+                        </table></div>`;
+                    }
+
+                    function renderCalendar() {
+                        // Simplified calendar for demo
+                        const currentMonth = new Date().getMonth();
+                        const currentYear = new Date().getFullYear();
+                        calendarView.innerHTML = `
+                            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">${currentYear}년 ${currentMonth + 1}월</h3></div>
+                            <div class="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200">
+                                ${['일', '월', '화', '수', '목', '금', '토'].map(day => `<div class="text-center font-semibold py-2 bg-gray-100">${day}</div>`).join('')}
+                                ${Array(35).fill(0).map((_, i) => {
+                                    const day = i - 4; // Placeholder for month start
+                                    let content = '';
+                                    if (day > 0 && day <= 31) {
+                                        const events = myCourses.filter(c => new Date(c.date).getDate() === day && new Date(c.date).getMonth() === currentMonth);
+                                        content = `<div class="p-1 h-24 overflow-y-auto ${events.length > 0 ? 'has-event' : ''}">
+                                            <span class="font-semibold">${day}</span>
+                                            ${events.map(e => `<div class="text-xs bg-sky-500 text-white rounded px-1 mt-1 truncate">${e.title}</div>`).join('')}
+                                        </div>`;
+                                    }
+                                    return `<div class="bg-white">${content}</div>`;
+                                }).join('')}
+                            </div>`;
+                    }
+
+                    listBtn.addEventListener('click', () => {
+                        listBtn.classList.add('active'); calendarBtn.classList.remove('active');
+                        listView.classList.remove('hidden'); calendarView.classList.add('hidden');
+                    });
+                    calendarBtn.addEventListener('click', () => {
+                        calendarBtn.classList.add('active'); listBtn.classList.remove('active');
+                        calendarView.classList.remove('hidden'); listView.classList.add('hidden');
+                    });
+
+                    renderList();
+                    renderCalendar();
+                }
+
+                if (mypageContentContainer) {
+                    renderMyPageContent('mypage-learning');
+                    mypageTabs.forEach(tab => {
+                        tab.addEventListener('click', () => {
+                            mypageTabs.forEach(t => t.classList.remove('active'));
+                            tab.classList.add('active');
+                            renderMyPageContent(tab.dataset.tab);
+                        });
+                    });
+                }
+            }
+            
+            window.openGradeModal = (courseId) => {
+                const course = coursesData.find(c => c.id === courseId);
+                if (!course) return;
+                modalContent.innerHTML = `<div class="p-6">
+                    <h3 class="text-2xl font-bold mb-4">${course.title}</h3>
+                    <div class="space-y-4">
+                        <div><h4 class="font-semibold">성적</h4><p class="p-4 bg-slate-100 rounded-md mt-1">${course.grade}</p></div>
+                        <div><h4 class="font-semibold">디브리핑 영상</h4><div class="mt-1 aspect-video bg-gray-800 text-white flex items-center justify-center rounded-md">[영상 플레이어]</div></div>
+                    </div>
+                    <div class="mt-6 flex justify-end"><button class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300" onclick="closeModal()">닫기</button></div>
+                </div>`;
+                openModal();
+            }
+
+            window.openSurveyModal = (courseId) => {
+                const course = coursesData.find(c => c.id === courseId);
+                if (!course || course.surveyCompleted) return;
+                modalContent.innerHTML = `<div class="p-6">
+                    <h3 class="text-2xl font-bold mb-4">${course.title} 만족도 평가</h3>
+                    <form id="survey-form" class="space-y-6">
+                        <div>
+                            <label class="font-semibold">교육과정 만족도</label>
+                            <div class="star-rating flex flex-row-reverse justify-end text-3xl text-gray-300" data-rating-for="course">
+                                <span data-value="5" class="cursor-pointer"></span>
+                                <span data-value="4" class="cursor-pointer"></span>
+                                <span data-value="3" class="cursor-pointer"></span>
+                                <span data-value="2" class="cursor-pointer"></span>
+                                <span data-value="1" class="cursor-pointer"></span>
+                            </div>
+                            <input type="hidden" name="courseRating" value="0">
+                        </div>
+                        <div>
+                            <label class="font-semibold">강사 만족도 (${course.instructor})</label>
+                            <div class="star-rating flex flex-row-reverse justify-end text-3xl text-gray-300" data-rating-for="instructor">
+                            <span data-value="5" class="cursor-pointer"></span>
+                            <span data-value="4" class="cursor-pointer"></span>
+                            <span data-value="3" class="cursor-pointer"></span>
+                            <span data-value="2" class="cursor-pointer"></span>
+                            <span data-value="1" class="cursor-pointer"></span>
+                            </div>
+                            <input type="hidden" name="instructorRating" value="0">
+                        </div>
+                        <div>
+                            <label class="font-semibold">의견</label>
+                            <textarea class="w-full p-2 border rounded-md mt-1" rows="4" placeholder="자유롭게 의견을 남겨주세요."></textarea>
+                        </div>
+                        <div class="mt-6 flex justify-end space-x-3">
+                            <button type="button" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300" onclick="closeModal()">취소</button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">제출</button>
+                        </div>
+                    </form>
+                </div>`;
+                openModal();
+                // FIX: Correct star rating selection logic
+                const form = modalContent.querySelector('#survey-form');
+
+                form.querySelectorAll('.star-rating').forEach(group => {
+                const stars = Array.from(group.querySelectorAll('span'));
+                const field = group.dataset.ratingFor === 'course' ? 'courseRating' : 'instructorRating';
+                const hidden = form.querySelector(`input[name="${field}"]`);
+
+                // 클릭(선택 고정)
+                stars.forEach(star => {
+                    star.addEventListener('click', () => {
+                    // 1) 모두 selected 제거
+                    stars.forEach(s => s.classList.remove('selected'));
+                    // 2) 클릭한 별에만 selected 부여
+                    star.classList.add('selected');
+
+                    // 3) 값 반영 (data-value는 "1~5")
+                    if (hidden) hidden.value = String(star.dataset.value);
+                    });
+                });
+                });
+                document.getElementById('survey-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    course.surveyCompleted = true;
+                    showNotification('만족도 평가가 제출되었습니다. 감사합니다.');
+                    closeModal();
+                    initializeMyPage(); // Refresh MyPage content
+                });
+            }
+
+            function initializeAllPages() {
+                initializeAboutPage();
+                initializeCoursesPage();
+                // Community, Rental and MyPage are initialized when navigated to
+                updateAuthUI(); // Set initial login/logout button
+                navigateTo('home');
+            }
+            
+            initializeAllPages();
+        });
+    </script>
+</body>
+</html>
